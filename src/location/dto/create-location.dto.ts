@@ -4,6 +4,7 @@ import {
   MaxLength,
   IsNotEmpty,
   IsNumber,
+  Matches,
 } from 'class-validator';
 import { IsNumberUnique } from './rules/is-number-unique-constraint';
 
@@ -19,12 +20,18 @@ export class CreateLocationDto {
   name: string;
 
   @IsString({ message: 'number must be a string' })
+  @Matches(/^[A-Za-z0-9-]+$/, {
+    message: 'number must contain only letters, numbers, and hyphens',
+  })
   @MaxLength(30)
   @IsNotEmpty({ message: 'number must not be empty' })
   @IsNumberUnique({ message: 'number must be unique' })
   number: string;
 
-  @IsNumber({ allowNaN: false }, { message: 'area must be a number' })
+  @IsNumber(
+    { allowNaN: false, maxDecimalPlaces: 3 },
+    { message: 'area must be a number and maximum decimal places is 3' },
+  )
   @IsNotEmpty({ message: 'area must not be empty' })
   area: number;
 }
