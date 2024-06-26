@@ -10,6 +10,9 @@ import {
   FailedUpdateLocationException,
   LocationNotFoundException,
 } from 'src/location/common/general-exception';
+import { QueryDto } from './dto/get-query-dto';
+import { PAGINATION } from './common/interfaces';
+import { ConditionType, SortType } from './common/enum';
 
 @Injectable()
 export class LocationService {
@@ -27,8 +30,59 @@ export class LocationService {
     }
   }
 
-  findAll() {
-    return this.locationRepository.find();
+  async findAll(query: QueryDto) {
+    const {
+      page = 1,
+      limit = 10,
+      isPaginated = 'true',
+      search,
+      condition,
+      sortBy,
+      sort,
+    } = query;
+    const isPaginationEnabled = isPaginated !== 'false';
+
+    const response: PAGINATION = {
+      results: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+    };
+    const queryBuilder = this.locationRepository.createQueryBuilder('location');
+
+    if (search) {
+      if (condition === ConditionType.EXACT) {
+        queryBuilder.andWhere(
+          'location.building = :search OR location.name = :search OR location.number = :search',
+          { search },
+        );
+      } else if (condition === ConditionType.INCLUDE) {
+        queryBuilder.andWhere(
+          'location.building LIKE :search OR location.name LIKE :search OR location.number LIKE :search',
+          { search: `%${search}%` },
+        );
+      }
+    }
+
+    if (sortBy && sort) {
+      const order = sort === SortType.ASC ? 'ASC' : 'DESC';
+      queryBuilder.orderBy(`location.${sortBy}`, order);
+    } else {
+      queryBuilder.orderBy('location.id', 'DESC');
+    }
+
+    if (isPaginationEnabled) {
+      queryBuilder.skip((page - 1) * limit).take(limit);
+    }
+
+    const [results, total] = await queryBuilder.getManyAndCount();
+
+    response.results = results;
+    response.total = total;
+    response.page = isPaginationEnabled ? page : 1;
+    response.totalPages = isPaginationEnabled ? Math.ceil(total / limit) : 1;
+
+    return response;
   }
 
   async findByNumber(number: string): Promise<Location | undefined> {

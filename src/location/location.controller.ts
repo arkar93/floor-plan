@@ -7,12 +7,14 @@ import {
   Param,
   Delete,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { IdToBodyInterceptor } from 'src/interceptor/id-to-body-interceptor';
 import { SUCCESS_RESPONSE } from 'src/location/common/success-response';
+import { QueryDto } from './dto/get-query-dto';
 
 @Controller('location')
 export class LocationController {
@@ -25,8 +27,8 @@ export class LocationController {
   }
 
   @Get()
-  findAll() {
-    return this.locationService.findAll();
+  findAll(@Query() query: QueryDto) {
+    return this.locationService.findAll(query);
   }
 
   @Get(':id')
