@@ -6,10 +6,12 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
 } from '@nestjs/common';
 import { LocationService } from './location.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { IdToBodyInterceptor } from 'src/interceptor/id-to-body-interceptor';
 
 @Controller('location')
 export class LocationController {
@@ -17,7 +19,6 @@ export class LocationController {
 
   @Post()
   create(@Body() createLocationDto: CreateLocationDto) {
-    console.log(createLocationDto);
     return this.locationService.create(createLocationDto);
   }
 
@@ -32,6 +33,7 @@ export class LocationController {
   }
 
   @Patch(':id')
+  @UseInterceptors(IdToBodyInterceptor)
   update(
     @Param('id') id: string,
     @Body() updateLocationDto: UpdateLocationDto,

@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocationModule } from './location/location.module';
 import { Location } from './location/entities/location.entity';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { IdToBodyInterceptor } from './interceptor/id-to-body-interceptor';
 
 @Module({
   imports: [
@@ -21,6 +23,12 @@ import { Location } from './location/entities/location.entity';
     LocationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IdToBodyInterceptor,
+    },
+  ],
 })
 export class AppModule {}
