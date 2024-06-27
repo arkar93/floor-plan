@@ -15,6 +15,7 @@ import { UpdateLocationDto } from './dto/update-location.dto';
 import { IdToBodyInterceptor } from 'src/interceptor/id-to-body-interceptor';
 import { SUCCESS_RESPONSE } from 'src/location/common/success-response';
 import { QueryDto } from './dto/get-query-dto';
+import { CheckIsNumber } from './dto/rules/is-num-rule';
 
 @Controller('location')
 export class LocationController {
@@ -32,8 +33,8 @@ export class LocationController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.locationService.findOne({ id: +id });
+  findOne(@Param('id', CheckIsNumber) id: number) {
+    return this.locationService.findOne({ id: id });
   }
 
   @Patch(':id')
