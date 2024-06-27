@@ -3,14 +3,15 @@ import { ValidationError } from 'class-validator';
 
 export class ValidationExceptionFactory {
   static create(errors: ValidationError[]) {
-    const result = [];
+    const result = {};
     errors.forEach((error) => {
       const constraints = error.constraints;
-      const messages = Object.keys(constraints).map((constraintKey) => ({
-        [error.property]: constraints[constraintKey],
-      }));
-      result.push(...messages);
+      const errorsArr = [];
+      Object.keys(constraints).map((constraintKey) => {
+        errorsArr.push(constraints[constraintKey]);
+      });
+      result[error.property] = errorsArr;
     });
-    return new BadRequestException(result);
+    return new BadRequestException({ errors: result });
   }
 }
