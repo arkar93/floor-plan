@@ -6,9 +6,12 @@ import { LocationModule } from './location/location.module';
 import { Location } from './location/entities/location.entity';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { IdToBodyInterceptor } from './interceptor/id-to-body-interceptor';
+import { LoggerModule } from 'nestjs-pino';
+import { loggerOptions } from './config/logger.config';
 
 @Module({
   imports: [
+    LoggerModule.forRoot(loggerOptions),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
