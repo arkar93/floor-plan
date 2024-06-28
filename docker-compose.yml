@@ -11,6 +11,35 @@ networks:
           gateway: 172.10.0.1
 
 services:
+  postgresql:
+    platform: linux/amd64
+    image: postgres:latest
+    container_name: floor-plan-postgres-latest
+    hostname: postgresql
+    volumes:
+      - ${DATA_PATH_HOST}/postgresql/data:/data
+      - ./postgresql/init-script.sql:/docker-entrypoint-initdb.d/init-script.sql
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${DB_PORT}:5432
+    networks:
+      - local
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: floor-plan-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8001
+    ports:
+      - '${PGADMIN_PORT}:8001'
+    depends_on:
+      - postgresql
+    networks:
+      - local
+
   redis:
     platform: linux/amd64
     image: redis:${REDIS_VERSION}
