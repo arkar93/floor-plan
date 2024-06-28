@@ -1,0 +1,26 @@
+version: '3.8'
+
+networks:
+  local:
+    name: local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.10.0.0/16
+          gateway: 172.10.0.1
+
+services:
+  redis:
+    platform: linux/amd64
+    image: redis:${REDIS_VERSION}
+    container_name: floor-plan-redis-${REDIS_VERSION}
+    hostname: redis
+    entrypoint: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - ${DATA_PATH_HOST}/redis/data:/data
+    ports:
+      - '${REDIS_HOST_PORT}:6379'
+    networks:
+      - local
+    tty: true

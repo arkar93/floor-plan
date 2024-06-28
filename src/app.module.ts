@@ -9,6 +9,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { loggerOptions } from './config/logger.config';
 import { ConfigModule } from '@nestjs/config';
 import { getTypeOrmConfig } from './config/type-orm.config';
+import { RedisModule } from './common/redis.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { getTypeOrmConfig } from './config/type-orm.config';
     }),
     TypeOrmModule.forRoot(getTypeOrmConfig()),
     LocationModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

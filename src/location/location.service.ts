@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,20 +13,31 @@ import {
 import { QueryDto } from './dto/get-query-dto';
 import { PAGINATION } from './common/interfaces';
 import { ConditionType, SortType } from './common/enum';
+import { Redis } from 'ioredis';
 
 @Injectable()
 export class LocationService {
   constructor(
     @InjectRepository(Location)
     private locationRepository: Repository<Location>,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
   ) {}
 
-  create(body: CreateLocationDto) {
+  async create(body: CreateLocationDto) {
     try {
       const location: Location = this.locationRepository.create(body);
-      return this.locationRepository.save(location);
+      const savedLocation = await this.locationRepository.save(location);
+      this.removeRedisCache();
+      return savedLocation;
     } catch (error) {
       throw new FailedCreateLocationException();
+    }
+  }
+
+  async removeRedisCache() {
+    const keys = await this.redisClient.keys('locations:*');
+    if (keys.length > 0) {
+      await this.redisClient.del(keys);
     }
   }
 
@@ -41,6 +52,12 @@ export class LocationService {
       sort,
     } = query;
     const isPaginationEnabled = isPaginated !== 'false';
+
+    const cacheKey = `locations:${JSON.stringify(query)}`;
+    const cachedData = await this.redisClient.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
 
     const response: PAGINATION = {
       results: [],
@@ -82,6 +99,13 @@ export class LocationService {
     response.page = isPaginationEnabled ? page : 1;
     response.totalPages = isPaginationEnabled ? Math.ceil(total / limit) : 1;
 
+    await this.redisClient.set(
+      cacheKey,
+      JSON.stringify(response),
+      'EX',
+      +process.env.REDIS_EXPIRY_MINUTES,
+    ); // Cache with minutes
+
     return response;
   }
 
@@ -101,7 +125,8 @@ export class LocationService {
     try {
       const location = await this.findOne({ id });
       Object.assign(location, body);
-      return this.locationRepository.save(location);
+      await this.locationRepository.save(location);
+      await this.removeRedisCache();
     } catch (error) {
       throw new FailedUpdateLocationException();
     }
@@ -110,7 +135,8 @@ export class LocationService {
   async remove(id: number) {
     try {
       const location = await this.locationRepository.findOneBy({ id });
-      return this.locationRepository.remove(location);
+      await this.locationRepository.remove(location);
+      await this.removeRedisCache();
     } catch (error) {
       throw new FailedDeleteLocationException();
     }
